@@ -1,0 +1,47 @@
+@import "global.lv"
+@import "algorithm.lv"
+@import "list.lv"
+@import "vector.lv"
+
+@namespace advent3
+@using list:to
+@using algorithm
+
+' Helper function to do mathematical summation
+def sum(interval, func) => interval map func reduce (0, \+\)
+
+' The nth +x number
+def plusX(n) => 1 + sum(1 to n, def(x) => x * 8 - 7)
+
+' The nth +y number
+def plusY(n) => 1 + sum(1 to n, def(x) => x * 8 - 5)
+
+' The nth -x number
+def minusX(n) => 1 + sum(1 to n, def(x) => x * 8 - 3)
+
+' The nth -y number
+def minusY(n) => 1 + sum(1 to n, def(x) => x * 8 - 1)
+
+(def heightOf_impl(num, dist, accum)
+    => dist - 1 ; accum > num
+    => heightOf_impl(num, dist + 1, accum + (dist * 8) + 1) ; rest
+)
+
+' The distance to the largest number on the +x axis less than or equal to num
+def heightOf(num) => heightOf_impl(num, 0, 1)
+
+' The two axes that bound this number
+(def axisBounds(num, height)
+    => plusX(height) -> plusY(height) ; plusY(height) > num
+    => plusY(height) -> minusX(height) ; minusX(height) > num
+    => minusX(height) -> minusY(height) ; minusY(height) > num
+    => minusY(height) -> plusX(height) ; rest
+)
+
+' The smallest difference between the two axes
+def projDist(num, axes) => min(num - [axes](0), abs([axes](1) - num))
+
+def totalTaxiDist(num, height) => height + projDist(num, axisBounds(num, height))
+
+def main(num) => totalTaxiDist(num, heightOf(num))
+

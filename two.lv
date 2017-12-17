@@ -1,0 +1,75 @@
+@import "global.lv"
+@import "algorithm.lv"
+@import "list.lv"
+@import "string.lv"
+
+@namespace advent2
+@using list:Nil
+@using list:<::
+@using string:substring
+@using algorithm
+
+(def bigSmall_impl(seq, i, pair)
+    => pair ; i = size(seq)
+    => bigSmall_impl(seq, i + 1, [seq](i) -> [pair](1)) ; [seq](i) > [pair](0)
+    => bigSmall_impl(seq, i + 1, [pair](0) -> [seq](i)) ; [seq](i) < [pair](1)
+    => bigSmall_impl(seq, i + 1, pair) ; rest
+)
+
+' Returns a pair containing the largest element in seq
+' followed by the smallest element in seq
+def bigSmall(seq) => bigSmall_impl(seq, 1, [seq](0) -> [seq](0))
+
+def diff(pair) => [pair](0) - [pair](1)
+
+(def evenlyDivisible_impl(seq, a, b)
+    => [seq](a) -> [seq](b) ; [seq](a) % [seq](b) = 0
+    => [seq](b) -> [seq](a) ; [seq](b) % [seq](a) = 0
+    => evenlyDivisible_impl(seq, a, b + 1) ; b + 1 < size(seq)
+    => evenlyDivisible_impl(seq, a + 1, a + 2) ; rest
+)
+
+' Returns a pair with the two evenly divisible numbers
+' in the given sequence (first % second = 0)
+def evenlyDivisible(seq) => evenlyDivisible_impl(seq, 0, 1)
+
+def div(pair) => [pair](0) / [pair](1)
+
+' Returns the index of the next whitespace character after start
+(def nextSpace(str, start)
+    => start ; start = size(str)
+    => start ; [str](start) = " " || [str](start) = "\t" || [str](start) = "\n"
+    => nextSpace(str, start + 1) ; rest
+)
+
+(def seqFromLine_impl(str, i, end)
+    => Nil ; i = size(str)
+    => Nil ; [str](i) = "\n"
+    => seqFromLine_impl(str, i + 1, nextSpace(str, i + 1)) ; i = end
+    => num(str substring (i, end)) <:: seqFromLine_impl(str, end, nextSpace(str, end)) ; rest
+)
+
+' Returns a list of numbers (split on whitespace) starting at index start
+' and ending at the first newline character
+def seqFromLine(str, start) => seqFromLine_impl(str, start, nextSpace(str, start))
+
+' Returns the index of the first newline character from index start
+(def nextNewline(str, start)
+    => start ; start = size(str)
+    => start ; [str](start) = "\n"
+    => nextNewline(str, start + 1) ; rest
+)
+
+(def seq2dFromStr_impl(str, lineIdx)
+    => Nil ; lineIdx = size(str)
+    => seq2dFromStr_impl(str, lineIdx + 1) ; [str](lineIdx) = "\n"
+    => seqFromLine(str, lineIdx) <:: seq2dFromStr_impl(str, nextNewline(str, lineIdx)) ; rest
+)
+
+' Creates a grid (list of lists) conatining the numbers
+' from the given string organized by line
+def numGrid(str) => seq2dFromStr_impl(str, 0)
+
+def main(str) => numGrid(str) map \bigSmall map \diff reduce (0, \+\)
+
+def main2(str) => numGrid(str) map \evenlyDivisible map \div reduce (0, \+\)

@@ -1,0 +1,37 @@
+@import "global.lv"
+@import "list.lv"
+@import "vector.lv"
+
+@namespace advent1
+@using list:<::
+@using list:Nil
+@using vector:Vector
+
+' Makes a vector of digits in the input string
+(def vecFromString(str) =>
+    Vector([def impl(idx)
+        => Nil                          ; idx < 0
+        => [str](idx) <:: impl(idx - 1) ; idx >= 0
+    ](size(str) - 1))
+)
+
+' Whether the digit at idx matches the next digit (modulo length)
+(def matches(list, idx)
+    => [list](idx) = [list]((idx + 1) % size(list))
+)
+
+' Whether the digit at idx matches the opposite digit
+(def matches2(list, idx)
+    => [list](idx) = [list]((idx + size(list) / 2) % size(list))
+)
+
+' Adds up the values of matched digits in the given list
+' starting from the given index
+(def add_matches(list, idx)
+    => 0                                             ; idx = size(list)
+    => num([list](idx)) + add_matches(list, idx + 1) ; matches2(list, idx)
+    => add_matches(list, idx + 1)                    ; rest
+)
+
+def main(str) => add_matches(vecFromString(str), 0)
+
