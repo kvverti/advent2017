@@ -1,0 +1,80 @@
+@import "global.lv"
+@import "algorithm.lv"
+@import "vector.lv"
+@import "list.lv"
+@import "option.lv"
+@import "string.lv"
+@import "hashtable.lv"
+
+@namespace advent4
+@using list:Nil
+@using list:<::
+@using string:substring
+@using algorithm
+@using hashtable:Hashtable
+@using hashtable:StrHash
+@using vector:Vector
+
+' Code reused from puzzle two
+
+' Returns the index of the next whitespace character after start
+(def nextSpace(str, start)
+    => start ; start = size(str)
+    => start ; [str](start) = " " || [str](start) = "\t" || [str](start) = "\n"
+    => nextSpace(str, start + 1) ; rest
+)
+
+(def seqFromLine_impl(str, i, end)
+    => Nil ; i = size(str)
+    => Nil ; [str](i) = "\n"
+    => seqFromLine_impl(str, i + 1, nextSpace(str, i + 1)) ; i = end
+    => (str substring (i, end)) <:: seqFromLine_impl(str, end, nextSpace(str, end)) ; rest
+)
+
+' Returns a list of numbers (split on whitespace) starting at index start
+' and ending at the first newline character
+def seqFromLine(str, start) => Vector(seqFromLine_impl(str, start, nextSpace(str, start)))
+
+' Returns the index of the first newline character from index start
+(def nextNewline(str, start)
+    => start ; start = size(str)
+    => start ; [str](start) = "\n"
+    => nextNewline(str, start + 1) ; rest
+)
+
+(def seq2dFromStr_impl(str, lineIdx)
+    => Nil ; lineIdx = size(str)
+    => seq2dFromStr_impl(str, lineIdx + 1) ; [str](lineIdx) = "\n"
+    => seqFromLine(str, lineIdx) <:: seq2dFromStr_impl(str, nextNewline(str, lineIdx)) ; rest
+)
+
+' end code reused from puzzle two
+
+def phraseList(str) => Vector(seq2dFromStr_impl(str, 0))
+
+' MergeSort for strings
+
+(def _merge_impl(str1, str2, idx1, idx2, res)
+    => res ; idx1 = size(str1) && idx2 = size(str2)
+    => res + (str2 substring (idx2, size(str2))) ; idx1 = size(str1)
+    => res + (str1 substring (idx1, size(str1))) ; idx2 = size(str2)
+    => _merge_impl(str1, str2, idx1 + 1, idx2, res + [str1](idx1)) ; [str1](idx1) < [str2](idx2)
+    => _merge_impl(str1, str2, idx1, idx2 + 1, res + [str2](idx2)) ; rest
+)
+
+def merge(str1, str2) => _merge_impl(str1, str2, 0, 0, "")
+
+(def _mergeSort_impl(str1, lo, hi, mid)
+    => "" ; hi = lo
+    => [str1](lo) ; hi - lo = 1
+    => merge(_mergeSort_impl(str1, lo, mid, lo + (mid - lo) // 2),
+        _mergeSort_impl(str1, mid, hi, mid + (hi - mid) // 2))
+    ; rest
+)
+
+def sort(str) => _mergeSort_impl(str, 0, size(str), size(str) // 2)
+
+(def main(str) =>
+    size(phraseList(str)
+    filter (def(pass) => size(pass map \sort reduce (Hashtable(StrHash, 200), \hashtable:add\)) = size(pass)))
+)

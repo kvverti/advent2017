@@ -1,0 +1,41 @@
+@import "global.lv"
+@import "algorithm.lv"
+@import "list.lv"
+@import "vector.lv"
+@import "string.lv"
+
+' It works...unfortunately neither the Java stack
+' nor the Java heap likes it.
+
+@namespace advent5
+@using list
+@using vector:Vector
+@using string:substring
+@using algorithm
+
+' Helpers for constructing a list from a string
+
+(def nextNewline(str, idx)
+    => idx ; idx = size(str)
+    => idx ; [str](idx) = "\n"
+    => nextNewline(str, idx + 1) ; rest
+)
+
+(def listFromStr_impl(str, from, to)
+    => Nil ; from >= size(str)
+    => listFromStr_impl(str, from + 1, nextNewline(str, from + 1)) ; from = to
+    => num(str substring (from, to)) <:: listFromStr_impl(str, to, nextNewline(str, to)) ; rest
+)
+
+def listFromStr(str) => Vector(listFromStr_impl(str, 0, nextNewline(str, 0)))
+
+(def runSteps(list, pos, count)
+    => count ; pos < 0 || pos >= size(list)  ' We are outside the list
+    => runSteps(
+        list replace (pos, def(x) => x + 1), ' Increment value
+        pos + [list](pos),                   ' Move pos
+        count + 1)                           ' Increment steps
+    ; rest
+)
+
+def main(str) => runSteps(listFromStr(str), 0, 0)

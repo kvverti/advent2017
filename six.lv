@@ -1,0 +1,70 @@
+@import "global.lv"
+@import "algorithm.lv"
+@import "list.lv"
+@import "vector.lv"
+@import "string.lv"
+
+@namespace advent6
+@using algorithm
+@using list:<::
+@using list:Nil
+@using vector:Vector
+@using string:substring
+
+' String parsing...note to self: add a proper string
+' library in Lavender
+' By the way the Java heap doesn't like this one either
+' Tail call optimization pending for Lavender
+
+(def nextWs(str, start)
+    => start ; start >= size(str)
+    => start ; [str](start) = " " || [str](start) = "\t" || [str](start) = "\n"
+    => nextWs(str, start + 1) ; rest
+)
+
+(def _getMemoryBanks_impl(str, start, end)
+    => Nil ; start >= size(str)
+    => _getMemoryBanks_impl(str, start + 1, nextWs(str, start + 1)) ; start = end
+    => num(str substring (start, end)) <:: _getMemoryBanks_impl(str, end, nextWs(str, end)) ; rest
+)
+
+def getMemoryBanks(str) => _getMemoryBanks_impl(str, 0, nextWs(str, 0))
+
+' Redistributes the number of blocks among the memory,
+' starting at the given index
+(def _redistributeBlocks_impl(memory, num, idx)
+    => memory ; num = 0
+    => _redistributeBlocks_impl(
+        memory replace (idx, def(x) => x + 1),
+        num - 1,
+        (idx + 1) % size(memory))
+    ; rest
+)
+
+(def redistributeBlocks(memory, maxIdx) =>
+    _redistributeBlocks_impl(
+        memory replace (maxIdx, def(e) => 0),
+        [memory](maxIdx),
+        (maxIdx + 1) % size(memory))
+)
+
+(def _largestIndex_impl(memory, idx, maxIdx)
+    => maxIdx ; idx = size(memory)
+    => _largestIndex_impl(memory, idx + 1, idx) ; [memory](idx) > [memory](maxIdx)
+    => _largestIndex_impl(memory, idx + 1, maxIdx) ; rest
+)
+
+' Ties go to the lower index
+def largestIndex(memory) => _largestIndex_impl(memory, 0, 0)
+
+(def iterate(memory, seen, num)
+    => num ; memory in seen
+    => iterate(
+        redistributeBlocks(memory, largestIndex(memory)),
+        Vector(memory <:: Nil) ++ seen,
+        num + 1)
+    ; rest
+)
+
+' Be prepared to wait a while
+def main(str) => iterate(getMemoryBanks(str), Vector(Nil), 0)
